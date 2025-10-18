@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جالب معلومات البوت والدردشة</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تعيين الخط الافتراضي واستخدام الاتجاه من اليمين لليسار (RTL) -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f7f9fb;
+            color: #333;
+            direction: rtl;
+            text-align: right;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .info-label {
+            @apply text-gray-500 font-medium;
+        }
+        .info-value {
+            @apply text-gray-800 font-semibold;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+    <!-- حاوية التطبيق الرئيسية -->
+    <div class="container w-full space-y-8">
+        <header class="text-center p-6 bg-blue-600 text-white card shadow-lg">
+            <h1 class="text-3xl font-bold mb-2">جالب معلومات تيليجرام (البوت والدردشة)</h1>
+            <p class="text-blue-200">أدخل بيانات الوصول لعرض تفاصيل البوت والدردشة المحددة.</p>
+        </header>
+
+        <!-- قسم الإدخال -->
+        <div id="input-section" class="card p-6 md:p-8">
+            <h2 class="text-xl font-semibold mb-6 text-gray-700 border-b pb-2">بيانات الوصول</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="botToken" class="block text-sm font-medium text-gray-700 mb-1">توكن البوت (Bot Token)</label>
+                    <input type="text" id="botToken" placeholder="أدخل توكن البوت الخاص بك..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="chatId" class="block text-sm font-medium text-gray-700 mb-1">معرّف الدردشة (Chat ID)</label>
+                    <input type="text" id="chatId" placeholder="أدخل معرّف الدردشة (مثل: -10012345678)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                    <p class="text-xs mt-1 text-gray-500">معرّف الدردشة يمكن أن يكون لقناة، مجموعة، أو مستخدم.</p>
+                </div>
+            </div>
+            <button id="fetchButton" onclick="fetchTelegramData()" class="mt-6 w-full py-3 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-500/50 transition duration-150 shadow-md shadow-green-500/30 flex items-center justify-center disabled:opacity-50">
+                <svg id="loadingSpinner" class="hidden animate-spin h-5 w-5 ml-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                جلب المعلومات
+            </button>
+        </div>
+
+        <!-- قسم الرسائل والأخطاء -->
+        <div id="status-message" class="hidden card p-4 text-center text-sm font-medium" role="alert"></div>
+
+        <!-- قسم معلومات البوت -->
+        <div id="bot-info-section" class="card p-6 md:p-8 hidden">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2 flex items-center">
+                <svg class="w-6 h-6 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                معلومات البوت (getMe)
+            </h2>
+            <div id="bot-info-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <!-- سيتم ملء المحتوى هنا -->
+            </div>
+        </div>
+        
+        <!-- قسم معلومات الدردشة -->
+        <div id="chat-info-section" class="card p-6 md:p-8 hidden">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2 flex items-center">
+                <svg class="w-6 h-6 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                معلومات الدردشة (getChat)
+            </h2>
+            <div id="chat-info-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <!-- سيتم ملء المحتوى هنا -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables (mandatory setup)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId;
+
+        // Function to initialize Firebase and authenticate
+        window.initializeFirebase = async () => {
+            try {
+                // setLogLevel('debug'); // Uncomment for debugging
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authentication
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    userId = user ? user.uid : crypto.randomUUID();
+                    console.log("Firebase Auth State Changed. User ID:", userId);
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+            }
+        };
+
+        // Call initialization
+        window.initializeFirebase();
+    </script>
+
+    <!-- Main Application Logic (Must be an inline script) -->
+    <script>
+        // العناصر
+        const botTokenInput = document.getElementById('botToken');
+        const chatIdInput = document.getElementById('chatId');
+        const fetchButton = document.getElementById('fetchButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const statusMessageDiv = document.getElementById('status-message');
+        const botInfoSection = document.getElementById('bot-info-section');
+        const botInfoContentDiv = document.getElementById('bot-info-content');
+        const chatInfoSection = document.getElementById('chat-info-section');
+        const chatInfoContentDiv = document.getElementById('chat-info-content');
+        
+        let isFetching = false;
+
+        /**
+         * دالة مساعدة لعرض رسائل الحالة (نجاح/خطأ)
+         */
+        function setStatusMessage(message, type) {
+            statusMessageDiv.textContent = message;
+            statusMessageDiv.className = 'card p-4 text-center text-sm font-medium';
+            statusMessageDiv.classList.remove('hidden');
+
+            if (type === 'success') {
+                statusMessageDiv.classList.add('bg-green-100', 'text-green-800');
+                statusMessageDiv.classList.remove('bg-red-100', 'text-red-800');
+            } else if (type === 'error') {
+                statusMessageDiv.classList.add('bg-red-100', 'text-red-800');
+                statusMessageDiv.classList.remove('bg-green-100', 'text-red-800');
+            } else {
+                statusMessageDiv.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            setTimeout(() => statusMessageDiv.classList.add('hidden'), 8000);
+        }
+
+        /**
+         * دالة للتحكم في حالة التحميل
+         */
+        function setLoadingState(loading) {
+            isFetching = loading;
+            fetchButton.disabled = loading;
+            if (loading) {
+                loadingSpinner.classList.remove('hidden');
+                fetchButton.textContent = 'جاري الجلب...';
+            } else {
+                loadingSpinner.classList.add('hidden');
+                fetchButton.textContent = 'جلب المعلومات';
+            }
+        }
+
+        /**
+         * دالة لتنفيذ طلب API إلى تيليجرام مع إعادة محاولة
+         */
+        async function telegramApiCall(token, method, params = {}) {
+            const baseUrl = `https://api.telegram.org/bot${token}/${method}`;
+            const url = new URL(baseUrl);
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            let lastError = null;
+            const maxRetries = 3;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.ok) {
+                        throw new Error(data.description || `Telegram API Error: ${data.error_code}`);
+                    }
+
+                    return data.result;
+
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Attempt ${i + 1} failed for ${method}:`, error);
+                    if (i < maxRetries - 1) {
+                        const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            throw new Error(`Failed to execute Telegram API call after ${maxRetries} attempts. Last error: ${lastError.message}`);
+        }
+
+        /**
+         * جلب معلومات البوت باستخدام getMe وعرضها
+         */
+        async function fetchBotInfo(token) {
+            try {
+                const botInfo = await telegramApiCall(token, 'getMe');
+                
+                botInfoContentDiv.innerHTML = `
+                    <div><span class="info-label">ID البوت:</span> <span class="info-value text-blue-600">${botInfo.id}</span></div>
+                    <div><span class="info-label">اسم البوت:</span> <span class="info-value">${botInfo.first_name}</span></div>
+                    <div><span class="info-label">اسم المستخدم (@):</span> <span class="info-value text-green-600 font-mono">${botInfo.username}</span></div>
+                    <div><span class="info-label">هل هو بوت؟:</span> <span class="info-value">${botInfo.is_bot ? 'نعم' : 'لا'}</span></div>
+                `;
+                botInfoSection.classList.remove('hidden');
+                return true;
+            } catch (error) {
+                setStatusMessage(`فشل جلب معلومات البوت. تأكد من صحة التوكن: ${error.message}`, 'error');
+                botInfoSection.classList.add('hidden');
+                return false;
+            }
+        }
+
+        /**
+         * جلب معلومات الدردشة باستخدام getChat وعرضها
+         */
+        async function fetchChatInfo(token, chatId) {
+            try {
+                const chatInfo = await telegramApiCall(token, 'getChat', { chat_id: chatId });
+                
+                let memberCount = '';
+                if (chatInfo.type !== 'private') {
+                     try {
+                        const count = await telegramApiCall(token, 'getChatMemberCount', { chat_id: chatId });
+                        memberCount = `<div><span class="info-label">عدد الأعضاء:</span> <span class="info-value text-red-600">${count}</span></div>`;
+                    } catch (e) {
+                        memberCount = '<div><span class="info-label">عدد الأعضاء:</span> <span class="info-value text-red-600">غير متاح (تحقق من صلاحيات البوت)</span></div>';
+                    }
+                }
+                
+                const chatTitle = chatInfo.title || chatInfo.first_name || 'لا يوجد عنوان';
+                const chatUsername = chatInfo.username ? `<span class="info-value text-green-600 font-mono">@${chatInfo.username}</span>` : 'لا يوجد';
+
+                chatInfoContentDiv.innerHTML = `
+                    <div><span class="info-label">ID الدردشة:</span> <span class="info-value text-blue-600">${chatInfo.id}</span></div>
+                    <div><span class="info-label">عنوان الدردشة:</span> <span class="info-value">${chatTitle}</span></div>
+                    <div><span class="info-label">نوع الدردشة:</span> <span class="info-value">${chatInfo.type}</span></div>
+                    <div><span class="info-label">اسم المستخدم للدردشة:</span> ${chatUsername}</div>
+                    ${memberCount}
+                    ${chatInfo.description ? `<div><span class="info-label">الوصف:</span> <span class="info-value">${chatInfo.description}</span></div>` : ''}
+                `;
+                chatInfoSection.classList.remove('hidden');
+                return true;
+            } catch (error) {
+                setStatusMessage(`فشل جلب معلومات الدردشة. تأكد من صحة الـ ID ومن أن البوت عضو فيها: ${error.message}`, 'error');
+                chatInfoSection.classList.add('hidden');
+                return false;
+            }
+        }
+
+
+        /**
+         * الدالة الرئيسية لبدء عملية الجلب
+         */
+        window.fetchTelegramData = async () => {
+            if (isFetching) return;
+
+            const token = botTokenInput.value.trim();
+            const chatId = chatIdInput.value.trim();
+
+            if (!token || !chatId) {
+                setStatusMessage('الرجاء إدخال توكن البوت ومعرّف الدردشة.', 'error');
+                return;
+            }
+
+            setLoadingState(true);
+            
+            // إخفاء النتائج السابقة
+            botInfoSection.classList.add('hidden');
+            chatInfoSection.classList.add('hidden');
+
+
+            try {
+                // 1. جلب معلومات البوت
+                const isTokenValid = await fetchBotInfo(token);
+                if (!isTokenValid) {
+                    throw new Error("Token validation failed.");
+                }
+                
+                // 2. جلب معلومات الدردشة
+                await fetchChatInfo(token, chatId);
+                
+                setStatusMessage('تم جلب معلومات البوت والدردشة بنجاح.', 'success');
+
+            } catch (error) {
+                // الرسائل يتم عرضها داخل fetchBotInfo و fetchChatInfo
+                console.error("Fetch Data Error:", error);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+    </script>
+</body>
+</html>
